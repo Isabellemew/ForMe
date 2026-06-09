@@ -10,7 +10,7 @@ UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL = 'gemini-1.5-flash'
+GEMINI_MODEL = 'gemini-pro'
 GEMINI_URL = f'https://generativelanguage.googleapis.com/v1beta1/models/{GEMINI_MODEL}:generateContent'
 
 SEARCH_API_KEY = os.environ.get('SEARCH_API_KEY')
@@ -60,7 +60,12 @@ def internships():
 
 def generate_gemini_answer(prompt: str) -> str:
     if not GEMINI_API_KEY:
-        return 'ИИ недоступен. Пожалуйста, установите GEMINI_API_KEY.'
+        return '''🤖 ИИ-помощник недоступен. Установите GEMINI_API_KEY в .env файл.
+        
+Для этого:
+1. Создайте аккаунт на https://ai.google.dev/
+2. Получите API ключ на https://aistudio.google.com/app/apikey
+3. Добавьте ключ в .env: GEMINI_API_KEY=your_key'''
 
     payload = {
         'contents': [
@@ -96,10 +101,31 @@ def generate_gemini_answer(prompt: str) -> str:
             parts = content.get('parts', [])
             if parts:
                 return parts[0].get('text', '').strip()
-        return 'ИИ не смог ответить. Попробуйте ещё раз.'
+        return '🤔 ИИ не смог ответить. Попробуйте переформулировать вопрос.'
+    except requests.exceptions.HTTPError as e:
+        print(f'Gemini HTTP error: {e}')
+        if '404' in str(e):
+            return f'''⚠️ Модель недоступна: {GEMINI_MODEL}
+        
+Возможные причины:
+1. API ключ не имеет доступа к модели
+2. Модель недоступна в вашем регионе
+3. Неправильный формат модели
+
+Попробуйте другую модель в backend/server.py и перезагрузите сервер.'''
+        elif '403' in str(e):
+            return '🔒 Доступ запрещен. Проверьте API ключ и квоты на Google Cloud.'
+        else:
+            return f'❌ Ошибка API: {str(e)}'
     except Exception as error:
-        print('Gemini request failed:', error)
-        return f'Ошибка при связи с ИИ: {str(error)}'
+        print(f'Gemini request failed: {error}')
+        return f'''⚠️ Ошибка при связи с ИИ.
+
+Это может быть временная проблема. Попробуйте ещё раз.
+Если проблема сохраняется, проверьте:
+- Интернет соединение
+- GEMINI_API_KEY в .env
+- Доступность Google API'''
 
 
 def search_lab_internships():
