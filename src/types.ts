@@ -11,6 +11,7 @@ export interface Internship {
   mentor: string;
   reward: string;
   remote: boolean;
+  applyLink?: string;
 }
 
 export interface Professor {

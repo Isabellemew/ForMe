@@ -10,8 +10,13 @@ UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'models/text-bison-001')
-GEMINI_URL = f'https://generativelanguage.googleapis.com/v1beta2/{GEMINI_MODEL}:generate'
+GEMINI_MODEL = 'gemini-1.5-flash'
+GEMINI_URL = f'https://generativelanguage.googleapis.com/v1beta1/models/{GEMINI_MODEL}:generateContent'
+
+SEARCH_API_KEY = os.environ.get('SEARCH_API_KEY')
+SEARCH_ENGINE_ID = os.environ.get('SEARCH_ENGINE_ID')
+SEARCH_QUERY = os.environ.get('SEARCH_QUERY', 'research lab internship cern apply site:cern.ch OR site:mit.edu OR site:ethz.ch')
+SEARCH_URL = 'https://www.googleapis.com/customsearch/v1'
 
 SAMPLE_INTERNSHIPS = [
     {
@@ -41,37 +46,111 @@ SAMPLE_INTERNSHIPS = [
         'mentor': 'Natalia Köhler',
         'reward': 'Гонорар + опционы',
         'remote': True,
+        'applyLink': 'https://deepventurelab.example.com/apply',
     },
 ]
 
 @app.route('/api/internships')
 def internships():
+    live_results = search_lab_internships()
+    if live_results:
+        return jsonify({'internships': live_results})
     return jsonify({'internships': SAMPLE_INTERNSHIPS})
 
 
 def generate_gemini_answer(prompt: str) -> str:
     if not GEMINI_API_KEY:
-        return ''
+        return 'ИИ недоступен. Пожалуйста, установите GEMINI_API_KEY.'
 
     payload = {
-        'prompt': {
-            'text': prompt,
-        },
-        'temperature': 0.7,
-        'maxOutputTokens': 250,
+        'contents': [
+            {
+                'parts': [
+                    {
+                        'text': prompt,
+                    }
+                ]
+            }
+        ],
+        'generationConfig': {
+            'temperature': 0.7,
+            'maxOutputTokens': 250,
+        }
     }
     headers = {
         'Content-Type': 'application/json',
     }
 
     try:
-        response = requests.post(GEMINI_URL, headers=headers, params={'key': GEMINI_API_KEY}, json=payload, timeout=20)
+        response = requests.post(
+            f'{GEMINI_URL}?key={GEMINI_API_KEY}',
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
         response.raise_for_status()
         data = response.json()
-        return data.get('candidates', [{}])[0].get('content', '').strip()
+        candidates = data.get('candidates', [])
+        if candidates:
+            content = candidates[0].get('content', {})
+            parts = content.get('parts', [])
+            if parts:
+                return parts[0].get('text', '').strip()
+        return 'ИИ не смог ответить. Попробуйте ещё раз.'
     except Exception as error:
         print('Gemini request failed:', error)
-        return ''
+        return f'Ошибка при связи с ИИ: {str(error)}'
+
+
+def search_lab_internships():
+    if not SEARCH_API_KEY or not SEARCH_ENGINE_ID:
+        return []
+
+    params = {
+        'key': SEARCH_API_KEY,
+        'cx': SEARCH_ENGINE_ID,
+        'q': SEARCH_QUERY,
+        'num': 6,
+        'safe': 'off',
+    }
+
+    try:
+        response = requests.get(SEARCH_URL, params=params, timeout=20)
+        response.raise_for_status()
+        data = response.json()
+        items = data.get('items', [])[:6]
+
+        results = []
+        for index, item in enumerate(items):
+            title = item.get('title', 'Лабораторная стажировка')
+            link = item.get('link')
+            snippet = item.get('snippet', '')
+            display = item.get('displayLink', 'Интернет')
+            tags = []
+            for tag in ['CERN', 'Quantum', 'Physics', 'AI', 'Research', 'Lab', 'Biotech', 'Data Science', 'Startup']:
+                if tag.lower() in f"{title} {snippet}".lower():
+                    tags.append(tag)
+
+            results.append({
+                'id': f'search-{index}-{abs(hash(link or title)) % 100000}',
+                'title': title,
+                'organization': display,
+                'location': 'Global / Online',
+                'acceptanceRate': 12,
+                'type': 'Research Lab Internship',
+                'deadline': 'TBA',
+                'description': snippet,
+                'tags': tags or ['Research', 'Lab'],
+                'mentor': display,
+                'reward': 'По ссылке',
+                'remote': True,
+                'applyLink': link,
+            })
+
+        return results
+    except Exception as error:
+        print('Search request failed:', error)
+        return []
 
 @app.route('/api/chat', methods=['POST'])
 def chat():

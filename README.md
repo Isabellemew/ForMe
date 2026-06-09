@@ -49,9 +49,14 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 GEMINI_API_KEY=...
 GEMINI_MODEL=models/text-bison-001
+SEARCH_API_KEY=...
+SEARCH_ENGINE_ID=...
+SEARCH_QUERY=research lab internship cern apply site:cern.ch OR site:mit.edu OR site:ethz.ch
 ```
 
 Также можно скопировать `.env.example` и заполнить ключи.
+
+> Важно: сейчас приложение использует Google Gemini для генерации ответа и Google Custom Search API для сбора реальных стажировок. Gemini сам по себе не ищет в интернете без такого поискового слоя.
 
 ## Развитие
 
@@ -59,3 +64,12 @@ GEMINI_MODEL=models/text-bison-001
 - Привязать Firestore коллекции `internships` и `professors`
 - Усилить оценку шансов через модель ИИ
 - Подключить реальные Google Gemini credentials для production
+
+## Как адаптировать Gemini под проект
+
+В этой версии Gemini используется через промпы. Чтобы сделать ассистента более «под свой проект»: 
+
+- настроить контекст и шаблоны промпов; 
+- хранить профиль пользователя и использовать его как дополнительное сообщение модели; 
+- добавить собственную базу знаний / documents retrieval; 
+- для реального fine-tuning воспользоваться Google Vertex AI Custom Model Training или embedding-based RAG, если нужно сохранять долгосрочную память.

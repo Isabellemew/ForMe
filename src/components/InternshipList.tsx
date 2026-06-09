@@ -44,6 +44,11 @@ function InternshipList({ internships }: Props) {
             <Link to={`/internship/${internship.id}`} className="button">
               Подробнее
             </Link>
+            {internship.applyLink ? (
+              <a href={internship.applyLink} target="_blank" rel="noreferrer" className="button secondary" style={{ color: '#1f2937' }}>
+                Подать заявку
+              </a>
+            ) : null}
             <span className="badge">{internship.reward}</span>
           </div>
         </article>

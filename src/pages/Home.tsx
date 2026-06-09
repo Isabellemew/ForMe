@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Internship } from '../types';
 import InternshipList from '../components/InternshipList';
 import AIChat from '../components/AIChat';
-import { fetchInternshipsFromFirebase } from '../services/firebaseService';
 
 const sampleInternships: Internship[] = [
   {
@@ -18,6 +17,7 @@ const sampleInternships: Internship[] = [
     mentor: 'Dr. Elsie Mora',
     reward: 'Стипендия + проживание',
     remote: false,
+    applyLink: 'https://careers.cern.ch/en/apply',
   },
   {
     id: 'deep-startup-ai',
@@ -32,6 +32,7 @@ const sampleInternships: Internship[] = [
     mentor: 'Natalia Köhler',
     reward: 'Гонорар + опционы',
     remote: true,
+    applyLink: 'https://deepventurelab.example.com/apply',
   },
 ];
 
@@ -43,13 +44,14 @@ function Home() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchInternshipsFromFirebase();
-        if (data.length) {
-          setInternships(data);
+        const response = await fetch('/api/internships');
+        const json = await response.json();
+        if (json?.internships?.length) {
+          setInternships(json.internships);
           return;
         }
       } catch (error) {
-        console.warn('Firebase fetch failed, using sample data.', error);
+        console.warn('API fetch failed, using sample data.', error);
       }
       setInternships(sampleInternships);
     }

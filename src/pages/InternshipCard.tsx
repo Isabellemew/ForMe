@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Internship } from '../types';
-import { fetchInternshipsFromFirebase } from '../services/firebaseService';
 
 const sampleInternships: Internship[] = [
   {
@@ -17,6 +16,7 @@ const sampleInternships: Internship[] = [
     mentor: 'Dr. Elsie Mora',
     reward: 'Стипендия + проживание',
     remote: false,
+    applyLink: 'https://careers.cern.ch/en/apply',
   },
   {
     id: 'deep-startup-ai',
@@ -31,6 +31,7 @@ const sampleInternships: Internship[] = [
     mentor: 'Natalia Köhler',
     reward: 'Гонорар + опционы',
     remote: true,
+    applyLink: 'https://deepventurelab.example.com/apply',
   },
 ];
 
@@ -41,8 +42,9 @@ function InternshipCard() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchInternshipsFromFirebase();
-        const found = data.find((item) => item.id === id);
+        const response = await fetch('/api/internships');
+        const json = await response.json();
+        const found = json?.internships?.find((item: Internship) => item.id === id);
         if (found) {
           setInternship(found);
           return;
@@ -111,6 +113,18 @@ function InternshipCard() {
             ))}
           </div>
         </div>
+
+        {internship.applyLink ? (
+          <a
+            href={internship.applyLink}
+            target="_blank"
+            rel="noreferrer"
+            className="button"
+            style={{ justifySelf: 'start' }}
+          >
+            Подать заявку
+          </a>
+        ) : null}
       </div>
     </article>
   );
