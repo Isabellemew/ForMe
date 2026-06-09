@@ -36,27 +36,64 @@ npm run dev
 
 5. Откройте `http://localhost:5173`
 
-## Настройка Firebase и Google Gemini
+## Настройка Google Gemini API и Custom Search
 
-Создайте проект Firebase и заполните переменные окружения в `.env`:
+### 1. Получить Google Gemini API ключ
+
+1. Перейти на [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Создать новый API ключ
+3. Скопировать ключ в `.env`:
+   ```env
+   GEMINI_API_KEY=<YOUR_API_KEY>
+   ```
+
+**Текущая модель:** `gemini-1.5-flash` (v1beta1 API)
+
+**Если возникают ошибки 404:**
+- Убедитесь, что у API ключа есть доступ к Gemini API
+- Попробуйте модель `gemini-pro` вместо `gemini-1.5-flash`
+- Проверьте, что аккаунт Google не ограничен
+
+### 2. Создать Google Custom Search Engine
+
+1. Перейти на [Programmable Search Engine](https://programmablesearchengine.google.com/)
+2. Нажать "Create" и выбрать "Search the entire web"
+3. В разделе "Sites to search" добавить:
+   - cern.ch
+   - mit.edu
+   - ethz.ch
+4. Скопировать **Search engine ID** (cx) из настроек
+5. Заполнить `.env`:
+   ```env
+   SEARCH_API_KEY=<YOUR_GOOGLE_API_KEY>
+   SEARCH_ENGINE_ID=<YOUR_SEARCH_ENGINE_ID>
+   ```
+
+**Статус:** Без `SEARCH_ENGINE_ID` приложение использует sample данные
+
+### 3. Требуемые переменные .env
 
 ```env
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-GEMINI_API_KEY=...
-GEMINI_MODEL=models/text-bison-001
-SEARCH_API_KEY=...
-SEARCH_ENGINE_ID=...
-SEARCH_QUERY=research lab internship cern apply site:cern.ch OR site:mit.edu OR site:ethz.ch
+# Google Gemini (обязательно для ИИ-чата)
+GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+
+# Google Custom Search (обязательно для реальных стажировок)
+SEARCH_API_KEY=<YOUR_GOOGLE_API_KEY>
+SEARCH_ENGINE_ID=<YOUR_CUSTOM_SEARCH_ENGINE_ID>
+
+# Firebase (опционально, текущая версия использует API fallback)
+VITE_FIREBASE_API_KEY=<YOUR_FIREBASE_API_KEY>
+VITE_FIREBASE_AUTH_DOMAIN=<YOUR_AUTH_DOMAIN>
+VITE_FIREBASE_PROJECT_ID=<YOUR_PROJECT_ID>
+VITE_FIREBASE_STORAGE_BUCKET=<YOUR_STORAGE_BUCKET>
+VITE_FIREBASE_MESSAGING_SENDER_ID=<YOUR_MESSAGING_SENDER_ID>
+VITE_FIREBASE_APP_ID=<YOUR_APP_ID>
 ```
 
 Также можно скопировать `.env.example` и заполнить ключи.
 
 > Важно: сейчас приложение использует Google Gemini для генерации ответа и Google Custom Search API для сбора реальных стажировок. Gemini сам по себе не ищет в интернете без такого поискового слоя.
+
 
 ## Развитие
 
